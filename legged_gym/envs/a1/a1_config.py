@@ -74,6 +74,16 @@ class A1RoughCfg( LeggedRobotCfg ):
         class scales( LeggedRobotCfg.rewards.scales ):
             torques = -0.0002
             dof_pos_limits = -10.0
+            forward = 20.0
+            lateral_movement_and_rotation = 21.0
+            work = 0.002
+            ground_impact = 0.02
+            smoothness = 0.001
+            action_magnitude = 0.07
+            joint_speed = 0.002
+            orientation = 1.5
+            z_acceleration = 2.0
+            # foot_slip = 0.8
 
 class A1RoughCfgPPO( LeggedRobotCfgPPO ):
     class algorithm( LeggedRobotCfgPPO.algorithm ):
