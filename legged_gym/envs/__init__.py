@@ -39,6 +39,9 @@ from .cassie.cassie import Cassie
 from .cassie.cassie_config import CassieRoughCfg, CassieRoughCfgPPO
 from .a1.a1_config import A1RoughCfg, A1RoughCfgPPO
 
+from .a1_dreamwaq.a1_dreamwaq import A1DreamWaQ
+from .a1_dreamwaq.a1_dreamwaq_config import A1DreamWaQCfg, A1DreamWaQCfgPPO
+
 
 import os
 
@@ -49,3 +52,5 @@ task_registry.register( "anymal_c_flat", Anymal, AnymalCFlatCfg(), AnymalCFlatCf
 task_registry.register( "anymal_b", Anymal, AnymalBRoughCfg(), AnymalBRoughCfgPPO() )
 task_registry.register( "a1", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO() )
 task_registry.register( "cassie", Cassie, CassieRoughCfg(), CassieRoughCfgPPO() )
+
+task_registry.register( "a1_dreamwaq", A1DreamWaQ, A1DreamWaQCfg(), A1DreamWaQCfgPPO() )

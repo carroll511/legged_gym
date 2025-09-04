@@ -93,14 +93,28 @@ class LeggedRobot(BaseTask):
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
+            # tensor
+            # root_positions = root_tensor[:, 0:3]
+            # root_orientations = root_tensor[:, 3:7]
+            # root_linvels = root_tensor[:, 7:10]
+            # root_angvels = root_tensor[:, 10:13]
+
         self.post_physics_step()
+        # quaternion, lin_vel, ang_vel, gravity update
+        # compute_reward
+        # compute observations
+        # action, dof_vel, root_vel update (save history)
 
         # return clipped obs, clipped states (None), rewards, dones and infos
         clip_obs = self.cfg.normalization.clip_observations
         self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
-        return self.obs_buf, self.privileged_obs_buf, self.rew_buf, self.reset_buf, self.extras
+
+        self.obs_history_buf = torch.roll(self.obs_history_buf, shifts=-1, dims=1)
+        self.obs_history_buf[:, -1] = self.obs_buf
+        
+        return self.obs_buf, self.privileged_obs_buf, self.obs_history_buf, self.rew_buf, self.reset_buf, self.extras
 
     def post_physics_step(self):
         """ check terminations, compute observations and rewards
@@ -126,6 +140,8 @@ class LeggedRobot(BaseTask):
         self.compute_reward()
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
+
+        # observation compute and append to history
         self.compute_observations() # in some cases a simulation step might be required to refresh some obs (for example body positions)
 
         self.last_actions[:] = self.actions[:]

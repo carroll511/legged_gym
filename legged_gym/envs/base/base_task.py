@@ -68,6 +68,7 @@ class BaseTask():
 
         # allocate buffers
         self.obs_buf = torch.zeros(self.num_envs, self.num_obs, device=self.device, dtype=torch.float)
+        self.obs_history_buf = torch.zeros(self.num_envs, cfg.env.history_len, self.num_obs, device=self.device, dtype=torch.float) # Added for DreamWaQ -> input for encoder
         self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.long)
         self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
@@ -103,6 +104,9 @@ class BaseTask():
     
     def get_privileged_observations(self):
         return self.privileged_obs_buf
+    
+    def get_observations_history(self):
+        return self.obs_history_buf
 
     def reset_idx(self, env_ids):
         """Reset selected robots"""
