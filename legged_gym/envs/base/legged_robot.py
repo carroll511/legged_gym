@@ -111,10 +111,10 @@ class LeggedRobot(BaseTask):
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
 
-        self.obs_history_buf = torch.roll(self.obs_history_buf, shifts=-1, dims=1)
-        self.obs_history_buf[:, -1] = self.obs_buf
-        
-        return self.obs_buf, self.privileged_obs_buf, self.obs_history_buf, self.rew_buf, self.reset_buf, self.extras
+        self.obs_history_buf = torch.cat([self.obs_history_buf[:, self.num_obs:], self.obs_buf], dim=1)
+        self.obs_history_buf[:, -self.num_obs:] = self.obs_buf
+
+        return self.obs_buf, self.privileged_obs_buf, self.obs_history_buf, self.base_lin_vel, self.rew_buf, self.reset_buf, self.extras
 
     def post_physics_step(self):
         """ check terminations, compute observations and rewards
@@ -132,6 +132,8 @@ class LeggedRobot(BaseTask):
         self.base_lin_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
         self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
         self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
+
+        self.velocity_truth_buf[:] = self.root_states[:, 7:10]
 
         self._post_physics_step_callback()
 

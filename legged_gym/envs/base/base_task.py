@@ -60,6 +60,7 @@ class BaseTask():
         self.num_envs = cfg.env.num_envs
         self.num_obs = cfg.env.num_observations
         self.num_privileged_obs = cfg.env.num_privileged_obs
+        self.history_len = cfg.env.history_len # Added for DreamWaQ -> input for encoder
         self.num_actions = cfg.env.num_actions
 
         # optimization flags for pytorch JIT
@@ -68,7 +69,8 @@ class BaseTask():
 
         # allocate buffers
         self.obs_buf = torch.zeros(self.num_envs, self.num_obs, device=self.device, dtype=torch.float)
-        self.obs_history_buf = torch.zeros(self.num_envs, cfg.env.history_len, self.num_obs, device=self.device, dtype=torch.float) # Added for DreamWaQ -> input for encoder
+        self.obs_history_buf = torch.zeros(self.num_envs, cfg.env.history_len * self.num_obs, device=self.device, dtype=torch.float) # Added for DreamWaQ -> input for encoder
+        self.velocity_truth_buf = torch.zeros(self.num_envs, 3, device=self.device, dtype=torch.float)
         self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.long)
         self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
@@ -107,6 +109,9 @@ class BaseTask():
     
     def get_observations_history(self):
         return self.obs_history_buf
+    
+    def get_velocity_truth(self):
+        return self.base_lin_vel
 
     def reset_idx(self, env_ids):
         """Reset selected robots"""
@@ -115,8 +120,8 @@ class BaseTask():
     def reset(self):
         """ Reset all robots"""
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
-        obs, privileged_obs, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
-        return obs, privileged_obs
+        obs, privileged_obs, history_obs, velocity_truth, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+        return obs, privileged_obs, history_obs, velocity_truth
 
     def step(self, actions):
         raise NotImplementedError
