@@ -116,10 +116,23 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
   
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
-        base_height_target = 0.25
+        base_height_target = 0.25 # Used in Body Height reward
+        foot_height_target = 0.1 # Used in Foot Clearance reward
         class scales( LeggedRobotCfg.rewards.scales ):
-            torques = -0.0002
-            dof_pos_limits = -10.0
+            # torques = -0.0002
+            # dof_pos_limits = -10.0
+            tracking_lin_vel = 1.0
+            tracking_ang_vel = 0.5
+            base_lin_vel_z = -2.0
+            ang_vel_xy = -0.05
+            orientation = -0.2
+            dof_acc = -2.5 * 1e-7
+            dof_power = -2 * 1e-5
+            base_height = -1.0
+            foot_clearance = -0.01
+            action_rate = -0.01
+            smoothness = -0.01
+            power_distribution = -1e-5
 
     # class normalization:
     #     class obs( LeggedRobotCfg.normalization.obs ):

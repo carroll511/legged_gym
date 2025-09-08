@@ -61,3 +61,46 @@ class A1DreamWaQ(LeggedRobot):
         # add noise if needed
         # if self.add_noise:
         #     self.obs_buf += (2 * torch.rand_like(self.obs_buf) - 1) * self.noise_scale_vec
+
+    #------------ reward functions----------------
+    def _reward_tracking_lin_vel(self):
+        return super()._reward_tracking_lin_vel()
+    
+    def _reward_tracking_ang_vel(self):
+        return super()._reward_tracking_ang_vel()
+    
+    def _reward_base_lin_vel_z(self):
+        return super()._reward_lin_vel_z()
+    
+    def _reward_ang_vel_xy(self):
+        return super()._reward_ang_vel_xy()
+    
+    def _reward_orientation(self):
+        return super()._reward_orientation()
+    
+    def _reward_dof_acc(self):
+        return super()._reward_dof_acc()
+    
+    def _reward_dof_power(self):
+        return torch.sum(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
+
+    def _reward_base_height(self):
+        return super()._reward_base_height()
+    
+    def _reward_foot_clearance(self):
+        base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
+        foot_height = self.foot_pos[:, :, 2] - self.terrain_height
+        foot_clearance = torch.square(foot_height - self.cfg.rewards.foot_height_target)
+        return torch.sum(foot_clearance * self.foot_vel, dim=-1)
+    
+    def _reward_action_rate(self):
+        return super()._reward_action_rate()
+    
+    def _reward_smootheness(self):
+        return torch.sum(torch.square(self.actions - 2*self.last_actions + self.second_last_actions), dim=-1)
+
+    def _reward_power_distribution(self):
+        # return torch.var((self.torques * self.dof_vel).sum(dim=-1) ** 2)
+        power_terms = self.torques * self.dof_vel
+
+        return torch.var(power_terms, dim=-1, unbiased=False)
