@@ -87,12 +87,19 @@ class A1DreamWaQ(LeggedRobot):
     def _reward_base_height(self):
         return super()._reward_base_height()
     
-    def _reward_foot_clearance(self):
-        base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
-        foot_height = self.foot_pos[:, :, 2] - self.terrain_height
-        foot_clearance = torch.square(foot_height - self.cfg.rewards.foot_height_target)
-        return torch.sum(foot_clearance * self.foot_vel, dim=-1)
-    
+    # def _reward_foot_clearance(self):
+    #     in_contact = self.contact_forces[:, self.feet_indices, 2] > 0.1
+    #     in_swing = torch.logical_not(in_contact)
+
+    #     foot_states = self.rigid_body_state[:, self.feet_indices, :]
+
+    #     foot_height = foot_states[:, :, 2]
+    #     foot_velocity_xy = foot_states[:, :, 7:9]
+
+    #     foot_height_error = torch.square(self.cfg.rewards.foot_height_target - foot_height)
+
+    #     return torch.sum(torch.square(self.cfg.rewards.foot_height_target - foot_height), dim=-1) * foot_velocity_xy
+
     def _reward_action_rate(self):
         return super()._reward_action_rate()
     
@@ -100,7 +107,6 @@ class A1DreamWaQ(LeggedRobot):
         return torch.sum(torch.square(self.actions - 2*self.last_actions + self.second_last_actions), dim=-1)
 
     def _reward_power_distribution(self):
-        # return torch.var((self.torques * self.dof_vel).sum(dim=-1) ** 2)
         power_terms = self.torques * self.dof_vel
 
         return torch.var(power_terms, dim=-1, unbiased=False)

@@ -41,30 +41,55 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         episode_length_s = 20
         history_len = 5 # number of previous observations
 
-    # class terrain( LeggedRobotCfg.terrain):
-    #     mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
-    #     horizontal_scale = 0.1 # [m]
-    #     vertical_scale = 0.005 # [m]
-    #     border_size = 25 # [m]
-    #     curriculum = True
-    #     static_friction = 1.0
-    #     dynamic_friction = 1.0
-    #     restitution = 0.
+    class terrain( LeggedRobotCfg.terrain):
+        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+        horizontal_scale = 0.1 # [m]
+        vertical_scale = 0.005 # [m]
+        border_size = 25 # [m]
+        curriculum = True
+        static_friction = 1.0
+        dynamic_friction = 1.0
+        restitution = 0.
     #     # rough terrain only:
-    #     measure_heights = True # 17 * 11
-    #     measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
-    #     measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
+        measure_heights = True # 17 * 11
+        measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
+        measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
     #     selected = False # select a unique terrain type and pass all arguments
     #     terrain_kwargs = None # Dict of arguments for selected terrain
-    #     max_init_terrain_level = 5 # starting curriculum state
-    #     terrain_length = 8.
-    #     terrain_width = 8.
-    #     num_rows= 10 # number of terrain rows (levels)
-    #     num_cols = 20 # number of terrain cols (types)
+        max_init_terrain_level = 5 # starting curriculum state
+        terrain_length = 8.
+        terrain_width = 8.
+        num_rows= 10 # number of terrain rows (levels)
+        num_cols = 20 # number of terrain cols (types)
     #     # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
-    #     terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
+        terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
     #     # trimesh only:
-    #     slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
+        slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
+        terrain_kwargs = {
+        'smooth_slope': {
+            'slope': (0.0, 0.4) # level 0에서는 0, level 9에서는 0.4 (약 22도)
+        },
+        'rough_slope': {
+            'slope': (0.0, 0.4), # level 0에서는 0, level 9에서는 0.4 (약 22도)
+            'roughness': (0.01, 0.05) # 울퉁불퉁함의 정도
+        },
+        'stairs_up': {
+            'step_width': 0.3,
+            # step_height / step_width 가 경사도를 결정합니다.
+            # 0.12 / 0.3 = 0.4 (약 22도)
+            'step_height': (0.05, 0.12) # 최대 높이 0.12m
+        },
+        'stairs_down': {
+            'step_width': 0.3,
+            'step_height': (-0.12, -0.05) # 내려가는 계단이므로 음수
+        },
+        'discrete': {
+            'min_height': 0.0,
+            'max_height': 0.1, # 불연속적인 블록의 최대 높이
+            'num_rects': 100,
+            'platform_size': 0.4
+        }
+    }
 
     class commands:
         curriculum = False
@@ -117,7 +142,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
         base_height_target = 0.25 # Used in Body Height reward
-        foot_height_target = 0.1 # Used in Foot Clearance reward
+        foot_height_target = 0.09 # Used in Foot Clearance reward (Concurrent Training of a Control Policy and a State Estimator for Dynamic and Robust Legged Locomotion)
         class scales( LeggedRobotCfg.rewards.scales ):
             # torques = -0.0002
             # dof_pos_limits = -10.0
@@ -129,7 +154,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
             dof_acc = -2.5 * 1e-7
             dof_power = -2 * 1e-5
             base_height = -1.0
-            foot_clearance = -0.01
+            # foot_clearance = -0.01
             action_rate = -0.01
             smoothness = -0.01
             power_distribution = -1e-5
