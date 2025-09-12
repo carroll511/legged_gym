@@ -41,6 +41,17 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     class terrain( LeggedRobotCfg.terrain ):
         measure_heights = True
 
+    class commands:
+        curriculum = False
+        max_curriculum = 1.
+        num_commands = 3 # lin_vel_x, lin_vel_y, ang_vel_yaw
+        resampling_time = 10.
+        heading_command = False # ang_vel_yaw command
+        class ranges:
+            lin_vel_x = [-1.0, 1.0]
+            lin_vel_y = [-1.0, 1.0]
+            ang_vel_yaw = [-1, 1]
+
     class init_state( LeggedRobotCfg.init_state ):
         pos = [0.0, 0.0, 0.42] # x,y,z [m]
         default_joint_angles = { # = target angles [rad] when action = 0.0
