@@ -134,10 +134,10 @@ class A1DreamWaQ(LeggedRobot):
         # add privileged body velocities
         current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
         
-        # add external disturbance forces
-        disturbance_sum = torch.sum(self.contact_forces[:, self.feet_indices, :], dim=1)
-        disturbance_norm = torch.norm(disturbance_sum, dim=1)
-        current_observation = torch.cat((current_observation, disturbance_sum / disturbance_norm.unsqueeze(1)), dim=-1)
+        # # add external disturbance forces
+        # disturbance_sum = torch.sum(self.contact_forces[:, self.feet_indices, :], dim=1)
+        # disturbance_norm = torch.norm(disturbance_sum, dim=1)
+        # current_observation = torch.cat((current_observation, disturbance_sum / disturbance_norm.unsqueeze(1)), dim=-1)
 
         # add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
