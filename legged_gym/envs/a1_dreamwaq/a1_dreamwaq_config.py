@@ -4,7 +4,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     class env( LeggedRobotCfg.env ):
         num_envs = 1024
         num_observations = 45 #  ang_vel(3), gravity(3), vel_cmd(3), joint_pos(12), joint_vel(12), last_action(12)
-        num_privileged_obs = 235 # observations(45), height_map(187), disturbance(3) body_vel(3)
+        num_privileged_obs = 238 # observations(45), height_map(187), disturbance(3) body_vel(3)
         history_len = 5
     
     class commands( LeggedRobotCfg.commands ):
@@ -64,6 +64,29 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         class scales( LeggedRobotCfg.rewards.scales ):
             torques = -0.0002
             dof_pos_limits = -10.0
+            tracking_lin_vel = 1.0
+            tracking_ang_vel = 0.5
+            base_lin_vel_z = -2.0
+            ang_vel_xy = -0.05
+            orientation = -0.2
+            dof_acc = -2.5e-7
+            dof_power = -2e-5
+            base_height = -1.0
+            # foot_clearance = -0.1
+            action_rate = -0.01
+            # smoothness = -0.001
+            # power_distribution = -0.01
+
+    class normalization:
+        class obs_scales:
+            lin_vel = 2.0
+            ang_vel = 0.25
+            dof_pos = 1.0
+            dof_vel = 0.05
+            height_measurements = 5.0
+            disturbance = 0.1
+        clip_observations = 100.
+        clip_actions = 100.
 
 class A1DreamWaQCfgPPO( LeggedRobotCfgPPO ):
     runner_class_name = 'OnPolicyRunnerDreamWaQ'

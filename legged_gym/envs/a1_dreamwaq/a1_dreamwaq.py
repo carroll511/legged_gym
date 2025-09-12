@@ -60,7 +60,6 @@ class A1DreamWaQ(LeggedRobot):
                                     self.dof_vel * self.obs_scales.dof_vel,
                                     self.last_actions
                                     ),dim=-1)
-        print(current_obs.shape)
         
         # add noise if needed
         if self.add_noise:
@@ -73,13 +72,15 @@ class A1DreamWaQ(LeggedRobot):
 
         current_obs = torch.cat((current_obs, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
 
+        disturbance_force = self.contact_forces[:, 0, :] * self.obs_scales.disturbance
+        current_obs = torch.cat((current_obs, disturbance_force), dim=-1)
+
         # add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
             heights = torch.clip(self.root_states[:, 2].unsqueeze(1) - 0.5 - self.measured_heights, -1, 1.) * self.obs_scales.height_measurements
             current_obs = torch.cat((current_obs, heights), dim=-1)
 
         self.privileged_obs_buf = current_obs
-        print(self.privileged_obs_buf.shape)
         
     
     def reset(self):
@@ -159,26 +160,26 @@ class A1DreamWaQ(LeggedRobot):
     def _reward_tracking_lin_vel(self):
         return super()._reward_tracking_lin_vel()
     
-    # def _reward_tracking_ang_vel(self):
-    #     return super()._reward_tracking_ang_vel()
+    def _reward_tracking_ang_vel(self):
+        return super()._reward_tracking_ang_vel()
     
-    # def _reward_base_lin_vel_z(self):
-    #     return super()._reward_lin_vel_z()
+    def _reward_base_lin_vel_z(self):
+        return super()._reward_lin_vel_z()
     
-    # def _reward_ang_vel_xy(self):
-    #     return super()._reward_ang_vel_xy()
+    def _reward_ang_vel_xy(self):
+        return super()._reward_ang_vel_xy()
     
-    # def _reward_orientation(self):
-    #     return super()._reward_orientation()
+    def _reward_orientation(self):
+        return super()._reward_orientation()
     
-    # def _reward_dof_acc(self):
-    #     return super()._reward_dof_acc()
+    def _reward_dof_acc(self):
+        return super()._reward_dof_acc()
     
-    # def _reward_dof_power(self):
-    #     return torch.sum(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
+    def _reward_dof_power(self):
+        return torch.sum(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
 
-    # def _reward_base_height(self):
-    #     return super()._reward_base_height()
+    def _reward_base_height(self):
+        return super()._reward_base_height()
     
     # # def _reward_foot_clearance(self):
     # #     in_contact = self.contact_forces[:, self.feet_indices, 2] > 0.1
@@ -193,8 +194,8 @@ class A1DreamWaQ(LeggedRobot):
 
     # #     return torch.sum(torch.square(self.cfg.rewards.foot_height_target - foot_height), dim=-1) * foot_velocity_xy
 
-    # def _reward_action_rate(self):
-    #     return super()._reward_action_rate()
+    def _reward_action_rate(self):
+        return super()._reward_action_rate()
     
     # def _reward_smoothness(self):
     #     return torch.sum(torch.square(self.actions - 2*self.last_actions + self.second_last_actions), dim=-1)
