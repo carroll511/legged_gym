@@ -134,6 +134,8 @@ class A1DreamWaQ(LeggedRobot):
         # add privileged body velocities
         current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
         
+        disturbance_force = self.contact_forces[:, 0, :] * self.obs_scales.disturbance
+        current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
         # # add external disturbance forces
         # disturbance_sum = torch.sum(self.contact_forces[:, self.feet_indices, :], dim=1)
         # disturbance_norm = torch.norm(disturbance_sum, dim=1)
@@ -156,7 +158,29 @@ class A1DreamWaQ(LeggedRobot):
         obs, privileged_obs, history_obs, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
         return obs, privileged_obs, history_obs
 
-    def _reward_no_fly(self):
-        contacts = self.contact_forces[:, self.feet_indices, 2] > 0.1
-        single_contact = torch.sum(1.*contacts, dim=1)==1
-        return 1.*single_contact
+    def _reward_tracking_lin_vel(self):
+        return super()._reward_tracking_lin_vel()
+    
+    def _reward_tracking_ang_vel(self):
+        return super()._reward_tracking_ang_vel()
+    
+    def _reward_base_lin_vel_z(self):
+        return super()._reward_lin_vel_z()
+    
+    def _reward_ang_vel_xy(self):
+        return super()._reward_ang_vel_xy()
+    
+    def _reward_orientation(self):
+        return super()._reward_orientation()
+    
+    def _reward_dof_acc(self):
+        return super()._reward_dof_acc()
+    
+    def _reward_dof_power(self):
+        return torch.sum(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
+
+    def _reward_base_height(self):
+        return super()._reward_base_height()
+    
+    def _reward_action_rate(self):
+        return super()._reward_action_rate()
