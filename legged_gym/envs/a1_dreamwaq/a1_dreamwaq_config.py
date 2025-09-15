@@ -105,7 +105,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
             base_height = -1.0
             # foot_clearance = -0.1
             action_rate = -0.01
-            # smoothness = -0.001
+            smoothness = -0.001
             # power_distribution = -0.01
 
     class normalization:
