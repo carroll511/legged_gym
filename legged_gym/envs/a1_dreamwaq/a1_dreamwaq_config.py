@@ -92,6 +92,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
         base_height_target = 0.25
+        foot_height_target = 0.09
         class scales( LeggedRobotCfg.rewards.scales ):
             torques = -0.0002
             dof_pos_limits = -10.0
@@ -103,10 +104,10 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
             dof_acc = -2.5e-7
             dof_power = -2e-5
             base_height = -1.0
-            # foot_clearance = -0.1
+            foot_clearance = -0.01
             action_rate = -0.01
-            smoothness = -0.001
-            # power_distribution = -0.01
+            smoothness = -0.01
+            power_distribution = -1e-5
 
     class normalization:
         class obs_scales:
@@ -126,6 +127,8 @@ class A1DreamWaQCfgPPO( LeggedRobotCfgPPO ):
     class runner( LeggedRobotCfgPPO.runner ):
         policy_class_name = 'ActorCriticDreamWaQ'
         algorithm_class_name = 'PPODreamWaQ'
+
+        max_iterations = 1000
         run_name = ''
         experiment_name = 'a1_dreamwaq'
 
