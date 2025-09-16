@@ -39,9 +39,10 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         history_len = 5
 
     class terrain( LeggedRobotCfg.terrain ):
+        # mesh_type = 'plane'
         measure_heights = True
     class commands:
-        curriculum = False
+        curriculum = True
         max_curriculum = 1.
         num_commands = 3 # lin_vel_x, lin_vel_y, ang_vel_yaw
         resampling_time = 10.
@@ -101,7 +102,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
             dof_acc = -2.5e-7
             dof_power = -2e-5
             base_height = -1.0
-            foot_clearance = -0.01
+            # foot_clearance = -0.01
             action_rate = -0.01
             smoothness = -0.01
             power_distribution = -1e-5
