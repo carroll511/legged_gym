@@ -40,7 +40,6 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
 
     class terrain( LeggedRobotCfg.terrain ):
         measure_heights = True
-
     class commands:
         curriculum = False
         max_curriculum = 1.
@@ -94,8 +93,6 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         base_height_target = 0.25
         foot_height_target = 0.09
         class scales( LeggedRobotCfg.rewards.scales ):
-            torques = -0.0002
-            dof_pos_limits = -10.0
             tracking_lin_vel = 1.0
             tracking_ang_vel = 0.5
             base_lin_vel_z = -2.0
