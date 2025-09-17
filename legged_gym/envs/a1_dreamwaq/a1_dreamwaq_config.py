@@ -33,16 +33,15 @@ from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobot
 class A1DreamWaQCfg( LeggedRobotCfg ):
     class env( LeggedRobotCfg.env ):
         num_envs = 1024
-        num_observations = 45 # ang_vel(3), gravity(3), vel_cmd(3), joint_pos(12), joint_vel(12), last_action(12), noise(3)
-        num_privileged_obs = 238 # observations(45), height_map(187), disturbance(3) body_vel(3)
+        num_observations = 45 # ang_vel(3), gravity(3), vel_cmd(3), joint_pos(12), joint_vel(12), last_action(12)
+        num_privileged_obs = 286 # observations(45), height_map(187), disturbance(3) body_vel(3)
         num_actions = 12
         history_len = 5
 
     class terrain( LeggedRobotCfg.terrain ):
-        # mesh_type = 'plane'
+        mesh_type = 'plane'
         measure_heights = True
         slope_threshold = 0.38
-        terrain_proportions = [0., 0., 0.5, 0.5, 0]
     class commands:
         curriculum = False
         max_curriculum = 1.
@@ -95,8 +94,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
         base_height_target = 0.25
-        foot_height_target = 0.09
-        only_positive_rewards = False
+        foot_height_target = 0.07
         class scales( LeggedRobotCfg.rewards.scales ):
             tracking_lin_vel = 1.0
             tracking_ang_vel = 0.5
@@ -111,14 +109,6 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
             smoothness = -0.01
             power_distribution = -1e-5
 
-            termination = -0.0
-            torques = -0.
-            dof_vel = -0.
-            feet_air_time =  0.
-            collision = 0.
-            feet_stumble = -0.0 
-            stand_still = -0.
-
     class normalization:
         class obs_scales:
             lin_vel = 2.0
@@ -126,7 +116,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
             dof_pos = 1.0
             dof_vel = 0.05
             height_measurements = 5.0
-            disturbance = 0.1
+            disturbance = 50.0
         clip_observations = 100.
         clip_actions = 100.
 

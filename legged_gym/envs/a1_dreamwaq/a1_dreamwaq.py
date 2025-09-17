@@ -124,18 +124,18 @@ class A1DreamWaQ(LeggedRobot):
             self._draw_debug_vis()
 
     def compute_observations(self):
-        current_observation = torch.cat((  self.base_ang_vel  * self.obs_scales.ang_vel,
-                                    self.projected_gravity,
-                                    self.commands[:, :3] * self.commands_scale,
-                                    (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
-                                    self.dof_vel * self.obs_scales.dof_vel,
-                                    self.last_actions
-                                    ),dim=-1)
-        
+        current_observation = torch.cat((   self.base_ang_vel  * self.obs_scales.ang_vel,
+                                            self.projected_gravity,
+                                            self.commands[:, :3] * self.commands_scale,
+                                            (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
+                                            self.dof_vel * self.obs_scales.dof_vel,
+                                            self.last_actions
+                                            ),dim=-1)
+                
         # add noise if needed
         if self.add_noise:
             current_observation += (2 * torch.rand_like(current_observation) - 1) * self.noise_scale_vec
-        
+
         self.obs_buf = current_observation
 
         # store history observations
@@ -145,7 +145,8 @@ class A1DreamWaQ(LeggedRobot):
         # Privileged observations
         # add privileged body velocities
         current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
-        
+
+        # disturbance_force = self.contact_forces.view(self.num_envs, -1) * 2./self.cfg.normalization.obs_scales.disturbance + self.cfg.normalization.obs_scales.disturbance/2.
         disturbance_force = self.contact_forces[:, 0, :] * self.obs_scales.disturbance
         current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
 
@@ -216,28 +217,14 @@ class A1DreamWaQ(LeggedRobot):
         return torch.sum(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
     
     def _reward_foot_clearance(self):
-        foot_world = self.foot_pos
-        base_pos = self.root_states[:, 0:3].unsqueeze(1)
-        rel_world = foot_world - base_pos
+        foot_heights = (self.foot_pos[:, :, 2]).view(self.num_envs, -1)
+        foot_vel_x = (self.foot_vel[:, :, 0]).view(self.num_envs, -1)
+        foot_vel_y = (self.foot_vel[:, :, 1]).view(self.num_envs, -1)
+        foot_vel = torch.sqrt(torch.square(foot_vel_x) + torch.square(foot_vel_y))
+        return torch.sum(torch.square(self.cfg.rewards.foot_height_target - foot_heights)*foot_vel, dim=-1)
 
-        N, L = rel_world.shape[0], rel_world.shape[1]
-        rel_body = quat_rotate_inverse(self.base_quat.unsqueeze(1).expand(-1, L, -1).reshape(-1, 4),
-                                       rel_world.reshape(-1, 3)).reshape(N, L, 3)
-        p_fz = rel_body[..., 2]
-
-        v_world = self.foot_vel
-        v_body = quat_rotate_inverse(self.base_quat.unsqueeze(1).expand(-1, L, -1).reshape(-1, 4),
-                                     v_world.reshape(-1, 3)).reshape(N, L, 3)
-        v_fxy = torch.linalg.norm(v_body[..., :2], dim=-1)
-
-        p_des = torch.as_tensor(self.cfg.rewards.foot_height_target, device=p_fz.device, dtype=p_fz.dtype).expand_as(p_fz)
-
-        term = (p_des - p_fz) **2 * v_fxy
-
-        return term.sum(dim=1)
-    
     def _reward_smoothness(self):
         return torch.sum(torch.square(self.actions - 2*self.last_actions + self.second_last_actions), dim=-1)
     
     def _reward_power_distribution(self):
-        return torch.var(torch.abs(self.torques * self.dof_vel), dim=-1)
+        return torch.var(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
