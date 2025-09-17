@@ -148,10 +148,6 @@ class A1DreamWaQ(LeggedRobot):
         
         disturbance_force = self.contact_forces[:, 0, :] * self.obs_scales.disturbance
         current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
-        # # add external disturbance forces
-        # disturbance_sum = torch.sum(self.contact_forces[:, self.feet_indices, :], dim=1)
-        # disturbance_norm = torch.norm(disturbance_sum, dim=1)
-        # current_observation = torch.cat((current_observation, disturbance_sum / disturbance_norm.unsqueeze(1)), dim=-1)
 
         # add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
@@ -215,55 +211,30 @@ class A1DreamWaQ(LeggedRobot):
         # send timeout info to the algorithm
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
-
-    def _reward_tracking_lin_vel(self):
-        return super()._reward_tracking_lin_vel()
-    
-    def _reward_tracking_ang_vel(self):
-        return super()._reward_tracking_ang_vel()
-    
-    def _reward_base_lin_vel_z(self):
-        return super()._reward_lin_vel_z()
-    
-    def _reward_ang_vel_xy(self):
-        return super()._reward_ang_vel_xy()
-    
-    def _reward_orientation(self):
-        return super()._reward_orientation()
-    
-    def _reward_dof_acc(self):
-        return super()._reward_dof_acc()
     
     def _reward_dof_power(self):
         return torch.sum(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
-
-    def _reward_base_height(self):
-        return super()._reward_base_height()
     
-    # def _reward_foot_clearance(self):
-    #     foot_world = self.foot_pos
-    #     base_pos = self.root_states[:, 0:3].unsqueeze(1)
-    #     rel_world = foot_world - base_pos
+    def _reward_foot_clearance(self):
+        foot_world = self.foot_pos
+        base_pos = self.root_states[:, 0:3].unsqueeze(1)
+        rel_world = foot_world - base_pos
 
-    #     N, L = rel_world.shape[0], rel_world.shape[1]
-    #     rel_body = quat_rotate_inverse(self.base_quat.unsqueeze(1).expand(-1, L, -1).reshape(-1, 4),
-    #                                    rel_world.reshape(-1, 3)).reshape(N, L, 3)
-    #     p_fz = rel_body[..., 2]
+        N, L = rel_world.shape[0], rel_world.shape[1]
+        rel_body = quat_rotate_inverse(self.base_quat.unsqueeze(1).expand(-1, L, -1).reshape(-1, 4),
+                                       rel_world.reshape(-1, 3)).reshape(N, L, 3)
+        p_fz = rel_body[..., 2]
 
-    #     v_world = self.foot_vel
-    #     v_body = quat_rotate_inverse(self.base_quat.unsqueeze(1).expand(-1, L, -1).reshape(-1, 4),
-    #                                  v_world.reshape(-1, 3)).reshape(N, L, 3)
-    #     v_fxy = torch.linalg.norm(v_body[..., :2], dim=-1)
+        v_world = self.foot_vel
+        v_body = quat_rotate_inverse(self.base_quat.unsqueeze(1).expand(-1, L, -1).reshape(-1, 4),
+                                     v_world.reshape(-1, 3)).reshape(N, L, 3)
+        v_fxy = torch.linalg.norm(v_body[..., :2], dim=-1)
 
-    #     p_des = torch.as_tensor(self.cfg.rewards.foot_height_target, device=p_fz.device, dtype=p_fz.dtype).expand_as(p_fz)
+        p_des = torch.as_tensor(self.cfg.rewards.foot_height_target, device=p_fz.device, dtype=p_fz.dtype).expand_as(p_fz)
 
-    #     term = (p_des - p_fz) **2 * v_fxy
+        term = (p_des - p_fz) **2 * v_fxy
 
-    #     return term.sum(dim=1)
-
-
-    def _reward_action_rate(self):
-        return super()._reward_action_rate()
+        return term.sum(dim=1)
     
     def _reward_smoothness(self):
         return torch.sum(torch.square(self.actions - 2*self.last_actions + self.second_last_actions), dim=-1)

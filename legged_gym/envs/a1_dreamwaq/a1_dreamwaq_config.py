@@ -41,8 +41,10 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     class terrain( LeggedRobotCfg.terrain ):
         # mesh_type = 'plane'
         measure_heights = True
+        slope_threshold = 0.38
+        terrain_proportions = [0., 0., 0.5, 0.5, 0]
     class commands:
-        curriculum = True
+        curriculum = False
         max_curriculum = 1.
         num_commands = 3 # lin_vel_x, lin_vel_y, ang_vel_yaw
         resampling_time = 10.
@@ -77,7 +79,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         stiffness = {'joint': 28.}  # [N*m/rad]
         damping = {'joint': 0.7}     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 0.25
+        action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
 
@@ -88,24 +90,34 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         penalize_contacts_on = ["thigh", "calf"]
         terminate_after_contacts_on = ["base"]
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
-  
+
+
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
         base_height_target = 0.25
         foot_height_target = 0.09
+        only_positive_rewards = False
         class scales( LeggedRobotCfg.rewards.scales ):
             tracking_lin_vel = 1.0
             tracking_ang_vel = 0.5
-            base_lin_vel_z = -2.0
+            lin_vel_z = -2.0
             ang_vel_xy = -0.05
             orientation = -0.2
             dof_acc = -2.5e-7
             dof_power = -2e-5
             base_height = -1.0
-            # foot_clearance = -0.01
+            foot_clearance = -0.01
             action_rate = -0.01
             smoothness = -0.01
             power_distribution = -1e-5
+
+            termination = -0.0
+            torques = -0.
+            dof_vel = -0.
+            feet_air_time =  0.
+            collision = 0.
+            feet_stumble = -0.0 
+            stand_still = -0.
 
     class normalization:
         class obs_scales:

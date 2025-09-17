@@ -559,6 +559,7 @@ class LeggedRobot(BaseTask):
             if name=="termination":
                 continue
             self.reward_names.append(name)
+            # print(f"Reward function {name} with scale {scale}")
             name = '_reward_' + name
             self.reward_functions.append(getattr(self, name))
 
