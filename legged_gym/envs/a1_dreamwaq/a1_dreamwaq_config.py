@@ -34,12 +34,12 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     class env( LeggedRobotCfg.env ):
         num_envs = 1024
         num_observations = 45 # ang_vel(3), gravity(3), vel_cmd(3), joint_pos(12), joint_vel(12), last_action(12)
-        num_privileged_obs = 286 # observations(45), height_map(187), disturbance(3) body_vel(3)
+        num_privileged_obs = 238 # observations(45), height_map(187), disturbance(3) body_vel(3)
         num_actions = 12
         history_len = 5
 
     class terrain( LeggedRobotCfg.terrain ):
-        mesh_type = 'plane'
+        # mesh_type = 'plane'
         measure_heights = True
         slope_threshold = 0.38
     class commands:
