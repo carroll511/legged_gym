@@ -904,3 +904,7 @@ class LeggedRobot(BaseTask):
     def _reward_feet_contact_forces(self):
         # penalize high contact forces
         return torch.sum((torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1) -  self.cfg.rewards.max_contact_force).clip(min=0.), dim=1)
+    
+    # Added for testing dreamwaq
+    def _reward_smoothness(self):
+        return torch.sum(torch.square(self.actions - 2 * self.last_actions + self.second_last_actions), dim=1)
