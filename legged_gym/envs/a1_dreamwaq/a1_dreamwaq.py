@@ -214,18 +214,18 @@ class A1DreamWaQ(LeggedRobot):
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
     
+    def _reward_smoothness(self):
+        return torch.sum(torch.square(self.actions - 2 * self.last_actions + self.second_last_actions), dim=1)
+    
     def _reward_dof_power(self):
-        return torch.sum(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
+        return torch.sum(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=1)
+    
+    def _reward_power_distribution(self):
+        return torch.std(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
     
     def _reward_foot_clearance(self):
         foot_heights = (self.foot_pos[:, :, 2]).view(self.num_envs, -1)
         foot_vel_x = (self.foot_vel[:, :, 0]).view(self.num_envs, -1)
         foot_vel_y = (self.foot_vel[:, :, 1]).view(self.num_envs, -1)
         foot_vel = torch.sqrt(torch.square(foot_vel_x) + torch.square(foot_vel_y))
-        return torch.sum(torch.square(self.cfg.rewards.foot_height_target - foot_heights)*foot_vel, dim=-1)
-
-    def _reward_smoothness(self):
-        return torch.sum(torch.square(self.actions - 2*self.last_actions + self.second_last_actions), dim=-1)
-    
-    def _reward_power_distribution(self):
-        return torch.var(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
+        return torch.sum(torch.square(self.cfg.rewards.foot_height_target - foot_heights) * foot_vel, dim=-1)
