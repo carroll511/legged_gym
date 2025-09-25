@@ -119,6 +119,7 @@ class A1DreamWaQ(LeggedRobot):
         self.last_root_vel[:] = self.root_states[:, 7:13]
 
         self.extras["velocity_targets"] = self.base_lin_vel.clone().to(self.device)
+        # print(self.extras["velocity_targets"]==self.base_lin_vel)
 
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
