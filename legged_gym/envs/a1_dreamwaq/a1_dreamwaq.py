@@ -46,6 +46,7 @@ class A1DreamWaQ(LeggedRobot):
         
         self.history_len = cfg.env.history_len
         self.history_obs_buf = torch.zeros(self.num_envs, self.history_len + 1, self.num_obs, device=self.device, dtype=torch.float)
+        self.velocity_targets_buf = torch.zeros(self.num_envs, 3, device=self.device, dtype=torch.float)
         
     def _init_buffers(self):
         super()._init_buffers()
@@ -67,6 +68,7 @@ class A1DreamWaQ(LeggedRobot):
         """
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
+        self.velocity_targets = self.base_lin_vel.clone().to(self.device)
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
@@ -83,7 +85,7 @@ class A1DreamWaQ(LeggedRobot):
         self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
-        return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.rew_buf, self.reset_buf, self.extras
+        return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.velocity_targets_buf, self.rew_buf, self.reset_buf, self.extras
 
     def post_physics_step(self):
         """ check terminations, compute observations and rewards
@@ -104,6 +106,9 @@ class A1DreamWaQ(LeggedRobot):
         self.foot_pos[:] = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 0:3]
         self.foot_vel[:] = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 7:10]
 
+        # expose latest base velocity for CENet velocity target regression
+        self.velocity_targets_buf[:] = self.base_lin_vel
+
         self._post_physics_step_callback()
 
         # compute observations, rewards, resets, ...
@@ -113,12 +118,16 @@ class A1DreamWaQ(LeggedRobot):
         self.reset_idx(env_ids)
         self.compute_observations() # in some cases a simulation step might be required to refresh some obs (for example body positions)
 
+        # print("obs_buf[0, :5]       :", self.obs_buf[0, :5].cpu().numpy())
+        # print("history_obs_buf[0,0,:5]:", self.history_obs_buf[0,0,:5].cpu().numpy())
+
+
         self.second_last_actions[:] = self.last_actions[:]
         self.last_actions[:] = self.actions[:]
         self.last_dof_vel[:] = self.dof_vel[:]
         self.last_root_vel[:] = self.root_states[:, 7:13]
 
-        self.extras["velocity_targets"] = self.base_lin_vel.clone().to(self.device)
+        # self.extras["velocity_targets"] = self.base_lin_vel.clone().to(self.device)
         # print(self.extras["velocity_targets"]==self.base_lin_vel)
 
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
@@ -142,7 +151,6 @@ class A1DreamWaQ(LeggedRobot):
         # store history observations
         self.history_obs_buf = torch.roll(self.history_obs_buf, shifts=1, dims=1)
         self.history_obs_buf[:, 0, :] = self.obs_buf
-        
         # Privileged observations
         # add privileged body velocities
         current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
@@ -157,17 +165,19 @@ class A1DreamWaQ(LeggedRobot):
             # print(heights.shape)
             current_observation = torch.cat((current_observation, heights), dim=-1)
 
-        if self.privileged_obs_buf is not None:
-            self.privileged_obs_buf = current_observation
+        self.privileged_obs_buf = current_observation
     
     def get_history_observations(self):
         return self.history_obs_buf
     
+    def get_velocity_targets(self):
+        return self.velocity_targets_buf
+    
     def reset(self):
         """ Reset all robots"""
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
-        obs, privileged_obs, history_obs, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
-        return obs, privileged_obs, history_obs
+        obs, privileged_obs, history_obs, velocity_targets, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+        return obs, privileged_obs, history_obs, velocity_targets
 
     def reset_idx(self, env_ids):
         """ Reset some environments.
