@@ -155,7 +155,7 @@ class A1DreamWaQ(LeggedRobot):
         self.history_obs_buf[:, 0, :] = self.obs_buf
         # Privileged observations
         # add privileged body velocities
-        current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
+        current_observation = torch.cat((self.base_lin_vel * self.obs_scales.lin_vel, current_observation), dim=-1)
 
         # disturbance_force = self.contact_forces.view(self.num_envs, -1) * 2./self.cfg.normalization.obs_scales.disturbance + self.cfg.normalization.obs_scales.disturbance/2.
         disturbance_force = self.contact_forces[:, 0, :] * self.obs_scales.disturbance
