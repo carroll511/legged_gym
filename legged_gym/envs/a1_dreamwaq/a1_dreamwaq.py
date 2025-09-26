@@ -68,7 +68,8 @@ class A1DreamWaQ(LeggedRobot):
         """
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
-        self.velocity_targets = self.base_lin_vel.clone().to(self.device)
+        # self.velocity_targets = self.base_lin_vel.clone().to(self.device)
+        self.velocity_targets_buf[:] = self.base_lin_vel.clone().to(self.device)
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
@@ -85,6 +86,7 @@ class A1DreamWaQ(LeggedRobot):
         self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
+        
         return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.velocity_targets_buf, self.rew_buf, self.reset_buf, self.extras
 
     def post_physics_step(self):
@@ -107,7 +109,7 @@ class A1DreamWaQ(LeggedRobot):
         self.foot_vel[:] = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 7:10]
 
         # expose latest base velocity for CENet velocity target regression
-        self.velocity_targets_buf[:] = self.base_lin_vel
+        # self.velocity_targets_buf[:] = self.base_lin_vel
 
         self._post_physics_step_callback()
 

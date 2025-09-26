@@ -96,16 +96,12 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         base_height_target = 0.25
         foot_height_target = 0.07
         class scales( LeggedRobotCfg.rewards.scales ):
-            tracking_lin_vel = 1.0
-            tracking_ang_vel = 0.5
-            lin_vel_z = -2.0
-            ang_vel_xy = -0.05
+            torques = -0.0002
+            dof_pos_limits = -10.0
             orientation = -0.2
-            dof_acc = -2.5e-7
             dof_power = -2e-5
             base_height = -1.0
             foot_clearance = -0.01
-            action_rate = -0.01
             smoothness = -0.01
             power_distribution = -1e-5
 
