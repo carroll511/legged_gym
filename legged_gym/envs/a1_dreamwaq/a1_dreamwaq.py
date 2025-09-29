@@ -46,7 +46,7 @@ class A1DreamWaQ(LeggedRobot):
         
         self.history_len = cfg.env.history_len
         self.history_obs_buf = torch.zeros(self.num_envs, self.history_len + 1, self.num_obs, device=self.device, dtype=torch.float)
-        self.velocity_targets_buf = torch.zeros(self.num_envs, 3, device=self.device, dtype=torch.float)
+        # self.velocity_targets_buf = torch.zeros(self.num_envs, 3, device=self.device, dtype=torch.float)
         
     def _init_buffers(self):
         super()._init_buffers()
@@ -69,7 +69,7 @@ class A1DreamWaQ(LeggedRobot):
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
         # self.velocity_targets = self.base_lin_vel.clone().to(self.device)
-        self.velocity_targets_buf[:] = self.base_lin_vel.clone().to(self.device)
+        # self.velocity_targets_buf[:] = self.base_lin_vel.clone().to(self.device)
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
@@ -87,7 +87,8 @@ class A1DreamWaQ(LeggedRobot):
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
         
-        return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.velocity_targets_buf, self.rew_buf, self.reset_buf, self.extras
+        # return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.velocity_targets_buf, self.rew_buf, self.reset_buf, self.extras
+        return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.rew_buf, self.reset_buf, self.extras
 
     def post_physics_step(self):
         """ check terminations, compute observations and rewards
@@ -172,14 +173,14 @@ class A1DreamWaQ(LeggedRobot):
     def get_history_observations(self):
         return self.history_obs_buf
     
-    def get_velocity_targets(self):
-        return self.velocity_targets_buf
+    # def get_velocity_targets(self):
+    #     return self.velocity_targets_buf
     
     def reset(self):
         """ Reset all robots"""
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
-        obs, privileged_obs, history_obs, velocity_targets, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
-        return obs, privileged_obs, history_obs, velocity_targets
+        obs, privileged_obs, history_obs, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+        return obs, privileged_obs, history_obs
 
     def reset_idx(self, env_ids):
         """ Reset some environments.
