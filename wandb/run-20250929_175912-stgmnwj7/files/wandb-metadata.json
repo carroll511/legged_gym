@@ -1,0 +1,44 @@
+{
+  "os":  "Linux-5.15.0-139-generic-x86_64-with-glibc2.17",
+  "python":  "CPython 3.8.20",
+  "startedAt":  "2025-09-29T08:59:12.286140Z",
+  "args":  [
+    "--task=a1_dreamwaq",
+    "--headless"
+  ],
+  "program":  "legged_gym/scripts/train.py",
+  "codePath":  "legged_gym/scripts/train.py",
+  "codePathLocal":  "legged_gym/scripts/train.py",
+  "git":  {
+    "remote":  "https://github.com/carroll511/legged_gym.git",
+    "commit":  "e849eaba375e08b78d6c2e4d6ba3bd425fbfddae"
+  },
+  "email":  "carroll@kaist.ac.kr",
+  "root":  "/home/carroll/legged_gym",
+  "host":  "carroll-System-Product-Name",
+  "executable":  "/home/carroll/anaconda3/envs/dreamwaq/bin/python",
+  "cpu_count":  6,
+  "cpu_count_logical":  12,
+  "gpu":  "NVIDIA GeForce RTX 2080 SUPER",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "459105206272",
+      "used":  "153177948160"
+    }
+  },
+  "memory":  {
+    "total":  "67331403776"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA GeForce RTX 2080 SUPER",
+      "memoryTotal":  "8589934592",
+      "cudaCores":  3072,
+      "architecture":  "Turing",
+      "uuid":  "GPU-7dc36f37-2350-b7f9-d569-b69df33a9a29"
+    }
+  ],
+  "cudaVersion":  "12.2",
+  "writerId":  "dn0qzs7y1jyb9hm7oxugeevor4s7crkq"
+}
