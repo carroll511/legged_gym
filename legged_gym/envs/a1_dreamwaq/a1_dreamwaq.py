@@ -50,12 +50,6 @@ class A1DreamWaQ(LeggedRobot):
         
     def _init_buffers(self):
         super()._init_buffers()
-        rigid_body_state = self.gym.acquire_rigid_body_state_tensor(self.sim)
-
-        self.gym.refresh_rigid_body_state_tensor(self.sim)
-
-        self.rigid_body_state = gymtorch.wrap_tensor(rigid_body_state)[:self.num_envs * self.num_bodies, :]
-
         self.second_last_actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
         
         self.foot_pos = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 0:3]
@@ -164,8 +158,10 @@ class A1DreamWaQ(LeggedRobot):
         # disturbance_force = self.contact_forces.view(self.num_envs, -1) * 2./self.cfg.normalization.obs_scales.disturbance + self.cfg.normalization.obs_scales.disturbance/2.
         # disturbance_force = self.contact_forces[:, 0, :] * self.obs_scales.disturbance
         # current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
-        push_force = self.root_states[:, 7:10] * self.obs_scales.lin_vel
-        current_observation = torch.cat((current_observation, push_force), dim=-1)
+        disturbance_force = torch.sum(self.contact_forces[:, self.penalised_contact_indices, :], dim=1)
+        norm_disturbance_force = torch.norm(disturbance_force, dim=1)
+        disturbance_force /= (norm_disturbance_force.unsqueeze(1) + 1e-6)
+        current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
 
         # add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
@@ -177,9 +173,6 @@ class A1DreamWaQ(LeggedRobot):
     
     def get_history_observations(self):
         return self.history_obs_buf
-    
-    # def get_velocity_targets(self):
-    #     return self.velocity_targets_buf
     
     def reset(self):
         """ Reset all robots"""
