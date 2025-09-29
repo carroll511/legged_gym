@@ -57,6 +57,7 @@ class A1DreamWaQ(LeggedRobot):
         self.rigid_body_state = gymtorch.wrap_tensor(rigid_body_state)[:self.num_envs * self.num_bodies, :]
 
         self.second_last_actions = torch.zeros(self.num_envs, self.num_actions, dtype=torch.float, device=self.device, requires_grad=False)
+        
         self.foot_pos = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 0:3]
         self.foot_vel = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 7:10]
 
@@ -97,6 +98,7 @@ class A1DreamWaQ(LeggedRobot):
         """
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
+        self.gym.refresh_rigid_body_state_tensor(self.sim)
 
         self.episode_length_buf += 1
         self.common_step_counter += 1
@@ -154,13 +156,16 @@ class A1DreamWaQ(LeggedRobot):
         # store history observations
         self.history_obs_buf = torch.roll(self.history_obs_buf, shifts=1, dims=1)
         self.history_obs_buf[:, 0, :] = self.obs_buf
+
         # Privileged observations
         # add privileged body velocities
-        current_observation = torch.cat((self.base_lin_vel * self.obs_scales.lin_vel, current_observation), dim=-1)
+        current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
 
         # disturbance_force = self.contact_forces.view(self.num_envs, -1) * 2./self.cfg.normalization.obs_scales.disturbance + self.cfg.normalization.obs_scales.disturbance/2.
-        disturbance_force = self.contact_forces[:, 0, :] * self.obs_scales.disturbance
-        current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
+        # disturbance_force = self.contact_forces[:, 0, :] * self.obs_scales.disturbance
+        # current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
+        push_force = self.root_states[:, 7:10] * self.obs_scales.lin_vel
+        current_observation = torch.cat((current_observation, push_force), dim=-1)
 
         # add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
