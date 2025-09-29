@@ -46,7 +46,6 @@ class A1DreamWaQ(LeggedRobot):
         
         self.history_len = cfg.env.history_len
         self.history_obs_buf = torch.zeros(self.num_envs, self.history_len + 1, self.num_obs, device=self.device, dtype=torch.float)
-        # self.velocity_targets_buf = torch.zeros(self.num_envs, 3, device=self.device, dtype=torch.float)
         
     def _init_buffers(self):
         super()._init_buffers()
@@ -63,8 +62,6 @@ class A1DreamWaQ(LeggedRobot):
         """
         clip_actions = self.cfg.normalization.clip_actions
         self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
-        # self.velocity_targets = self.base_lin_vel.clone().to(self.device)
-        # self.velocity_targets_buf[:] = self.base_lin_vel.clone().to(self.device)
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
@@ -82,7 +79,6 @@ class A1DreamWaQ(LeggedRobot):
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
         
-        # return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.velocity_targets_buf, self.rew_buf, self.reset_buf, self.extras
         return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.rew_buf, self.reset_buf, self.extras
 
     def post_physics_step(self):
@@ -105,9 +101,6 @@ class A1DreamWaQ(LeggedRobot):
         self.foot_pos[:] = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 0:3]
         self.foot_vel[:] = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 7:10]
 
-        # expose latest base velocity for CENet velocity target regression
-        # self.velocity_targets_buf[:] = self.base_lin_vel
-
         self._post_physics_step_callback()
 
         # compute observations, rewards, resets, ...
@@ -126,9 +119,6 @@ class A1DreamWaQ(LeggedRobot):
         self.last_dof_vel[:] = self.dof_vel[:]
         self.last_root_vel[:] = self.root_states[:, 7:13]
 
-        # self.extras["velocity_targets"] = self.base_lin_vel.clone().to(self.device)
-        # print(self.extras["velocity_targets"]==self.base_lin_vel)
-
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
 
@@ -138,7 +128,7 @@ class A1DreamWaQ(LeggedRobot):
                                             self.commands[:, :3] * self.commands_scale,
                                             (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
                                             self.dof_vel * self.obs_scales.dof_vel,
-                                            self.last_actions
+                                            self.actions
                                             ),dim=-1)
                 
         # add noise if needed
@@ -155,12 +145,7 @@ class A1DreamWaQ(LeggedRobot):
         # add privileged body velocities
         current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
 
-        # disturbance_force = self.contact_forces.view(self.num_envs, -1) * 2./self.cfg.normalization.obs_scales.disturbance + self.cfg.normalization.obs_scales.disturbance/2.
-        # disturbance_force = self.contact_forces[:, 0, :] * self.obs_scales.disturbance
-        # current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
-        disturbance_force = torch.sum(self.contact_forces[:, self.penalised_contact_indices, :], dim=1)
-        norm_disturbance_force = torch.norm(disturbance_force, dim=1)
-        disturbance_force /= (norm_disturbance_force.unsqueeze(1) + 1e-6)
+        disturbance_force = self.root_states[:, 7:10] * self.obs_scales.lin_vel
         current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
 
         # add perceptive inputs if not blind

@@ -1,0 +1,96 @@
+_wandb:
+    value:
+        cli_version: 0.22.0
+        e:
+            cnqibr5jptjj575iejadqbqcz6gbner7:
+                args:
+                    - --task=a1_dreamwaq
+                    - --headless
+                codePath: legged_gym/scripts/train.py
+                codePathLocal: legged_gym/scripts/train.py
+                cpu_count: 6
+                cpu_count_logical: 12
+                cudaVersion: "12.2"
+                disk:
+                    /:
+                        total: "459105206272"
+                        used: "152815489024"
+                email: carroll@kaist.ac.kr
+                executable: /home/carroll/anaconda3/envs/dreamwaq/bin/python
+                git:
+                    commit: 9631e4af7696c3e7b4d04d983d04967a819ac416
+                    remote: https://github.com/carroll511/legged_gym.git
+                gpu: NVIDIA GeForce RTX 2080 SUPER
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Turing
+                      cudaCores: 3072
+                      memoryTotal: "8589934592"
+                      name: NVIDIA GeForce RTX 2080 SUPER
+                      uuid: GPU-7dc36f37-2350-b7f9-d569-b69df33a9a29
+                host: carroll-System-Product-Name
+                memory:
+                    total: "67331403776"
+                os: Linux-5.15.0-139-generic-x86_64-with-glibc2.17
+                program: legged_gym/scripts/train.py
+                python: CPython 3.8.20
+                root: /home/carroll/legged_gym
+                startedAt: "2025-09-29T07:29:58.438108Z"
+                writerId: cnqibr5jptjj575iejadqbqcz6gbner7
+        m: []
+        python_version: 3.8.20
+        t:
+            "1":
+                - 1
+            "2":
+                - 1
+            "3":
+                - 13
+                - 16
+            "4": 3.8.20
+            "5": 0.22.0
+            "12": 0.22.0
+            "13": linux-x86_64
+algorithm:
+    value:
+        clip_param: 0.2
+        desired_kl: 0.01
+        entropy_coef: 0.01
+        gamma: 0.99
+        lam: 0.95
+        learning_rate: 0.001
+        max_grad_norm: 1
+        num_learning_epochs: 5
+        num_mini_batches: 4
+        schedule: adaptive
+        use_clipped_value_loss: true
+        value_loss_coef: 1
+policy:
+    value:
+        activation: elu
+        actor_hidden_dims:
+            - 512
+            - 256
+            - 128
+        critic_hidden_dims:
+            - 512
+            - 256
+            - 128
+        init_noise_std: 1
+runner:
+    value:
+        algorithm_class_name: PPODreamWaQ
+        checkpoint: -1
+        experiment_name: a1_dreamwaq
+        load_run: -1
+        max_iterations: 1000
+        num_steps_per_env: 24
+        policy_class_name: ActorCriticDreamWaQ
+        resume: false
+        resume_path: null
+        run_name: ""
+        save_interval: 50
+runner_class_name:
+    value: OnPolicyRunnerDreamWaQ
+seed:
+    value: 1
