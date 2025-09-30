@@ -78,7 +78,7 @@ def play(args):
 
     for i in range(10*int(env.max_episode_length)):
         actions = policy(obs.detach(), history_obs.detach())
-        obs, _, _, rews, dones, infos = env.step(actions.detach())
+        obs, _, _, _, rews, dones, infos = env.step(actions.detach())
         if RECORD_FRAMES:
             if i % 2:
                 filename = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'frames', f"{img_idx}.png")

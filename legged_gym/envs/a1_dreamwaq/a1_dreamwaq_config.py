@@ -90,6 +90,28 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         terminate_after_contacts_on = ["base"]
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
 
+    class domain_rand:
+        randomize_base_mass = False
+        added_mass_range = [-1.0, 2.0]
+
+        randomize_kp = True
+        kp_factor_range = [0.9, 1.1]
+
+        randomize_kd = True
+        kd_factor_range = [0.9, 1.1]
+
+        randomize_motor_strength = True
+        motor_strength_factor = [0.8, 1.2]
+
+        randomize_base_com = True
+        com_shift_range = [-0.05, 0.05]
+
+        randomize_friction = True
+        friction_range = [0.2, 1.25]
+
+        randomize_latency = True
+        latency_range = [0.0, 0.015]
+
 
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
@@ -123,7 +145,7 @@ class A1DreamWaQCfgPPO( LeggedRobotCfgPPO ):
         policy_class_name = 'ActorCriticDreamWaQ'
         algorithm_class_name = 'PPODreamWaQ'
 
-        max_iterations = 1000
+        max_iterations = 2000
         run_name = ''
         experiment_name = 'a1_dreamwaq'
 
