@@ -112,6 +112,10 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         randomize_latency = True
         latency_range = [0.0, 0.015]
 
+        push_robots = True
+        push_interval_s = 15
+        max_push_vel_xy = 1.
+
 
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
