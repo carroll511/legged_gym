@@ -125,6 +125,30 @@ class A1DreamWaQ(LeggedRobot):
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
 
+    def _get_noise_scale_vec(self, cfg):
+        """ Sets a vector used to scale the noise added to the observations.
+            [NOTE]: Must be adapted when changing the observations structure
+
+        Args:
+            cfg (Dict): Environment config file
+
+        Returns:
+            [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
+        """
+        noise_vec = torch.zeros_like(self.obs_buf[0])
+        self.add_noise = self.cfg.noise.add_noise
+        noise_scales = self.cfg.noise.noise_scales
+        noise_level = self.cfg.noise.noise_level
+        noise_vec[:3] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
+        noise_vec[3:6] = noise_scales.gravity * noise_level
+        noise_vec[6:9] = 0. # commands
+        noise_vec[9:21] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
+        noise_vec[21:33] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
+        noise_vec[33:45] = 0. # previous actions
+        # if self.cfg.terrain.measure_heights:
+        #     noise_vec[45:232] = noise_scales.height_measurements* noise_level * self.obs_scales.height_measurements
+        return noise_vec
+
     def compute_observations(self):
         current_observation = torch.cat((   self.base_ang_vel  * self.obs_scales.ang_vel,
                                             self.projected_gravity,
