@@ -37,12 +37,14 @@ from legged_gym.utils import  get_args, export_policy_as_jit, task_registry, Log
 
 import numpy as np
 import torch
+import time
 
 
 def play(args):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
-    env_cfg.env.num_envs = min(env_cfg.env.num_envs, 50)
+    # run exactly one environment for real-time viewing
+    env_cfg.env.num_envs = 1
     env_cfg.terrain.num_rows = 5
     env_cfg.terrain.num_cols = 5
     env_cfg.terrain.curriculum = False
@@ -77,6 +79,8 @@ def play(args):
     img_idx = 0
 
     for i in range(10*int(env.max_episode_length)):
+        loop_t0 = time.perf_counter()
+
         actions = policy(obs.detach(), history_obs.detach())
         obs, _, _, _, rews, dones, infos = env.step(actions.detach())
         if RECORD_FRAMES:
@@ -115,9 +119,19 @@ def play(args):
         elif i==stop_rew_log:
             logger.print_rewards()
 
+        # throttle to (approximately) real-time
+        # desired wall clock per sim step is env.dt / REALTIME_FACTOR
+        desired_step_time = env.dt / max(REALTIME_FACTOR, 1e-3)
+        elapsed = time.perf_counter() - loop_t0
+        sleep_time = desired_step_time - elapsed
+        if sleep_time > 0:
+            time.sleep(sleep_time)
+
 if __name__ == '__main__':
     EXPORT_POLICY = True
     RECORD_FRAMES = False
     MOVE_CAMERA = False
+    # 1.0 => real-time, 0.5 => 2x slower than real-time, 2.0 => 2x faster wall-clock
+    REALTIME_FACTOR = 1.0
     args = get_args()
     play(args)

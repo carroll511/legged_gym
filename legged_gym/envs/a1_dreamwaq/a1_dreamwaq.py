@@ -45,7 +45,7 @@ class A1DreamWaQ(LeggedRobot):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
         
         self.history_len = cfg.env.history_len
-        self.history_obs_buf = torch.zeros(self.num_envs, self.history_len + 1, self.num_obs, device=self.device, dtype=torch.float)
+        self.history_obs_buf = torch.zeros(self.num_envs, self.history_len + 1, self.num_obs-3, device=self.device, dtype=torch.float)
         
     def _init_buffers(self):
         super()._init_buffers()
@@ -96,12 +96,13 @@ class A1DreamWaQ(LeggedRobot):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         noise_level = self.cfg.noise.noise_level
-        noise_vec[:3] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
-        noise_vec[3:6] = noise_scales.gravity * noise_level
-        noise_vec[6:9] = 0. # commands
-        noise_vec[9:21] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
-        noise_vec[21:33] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
-        noise_vec[33:45] = 0. # previous actions
+        noise_vec[:3] = noise_scales.lin_vel * noise_level * self.obs_scales.lin_vel
+        noise_vec[3:6] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
+        noise_vec[6:9] = noise_scales.gravity * noise_level
+        noise_vec[9:12] = 0. # commands
+        noise_vec[12:24] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
+        noise_vec[24:36] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
+        noise_vec[36:48] = 0. # previous actions
         # if self.cfg.terrain.measure_heights:
         #     noise_vec[45:232] = noise_scales.height_measurements* noise_level * self.obs_scales.height_measurements
         return noise_vec
@@ -149,27 +150,20 @@ class A1DreamWaQ(LeggedRobot):
             self._draw_debug_vis()
 
     def compute_observations(self):
-        current_observation = torch.cat((   self.base_ang_vel  * self.obs_scales.ang_vel,
+        current_observation = torch.cat((   self.base_lin_vel  * self.obs_scales.lin_vel,
+                                            self.base_ang_vel  * self.obs_scales.ang_vel,
                                             self.projected_gravity,
                                             self.commands[:, :3] * self.commands_scale,
                                             (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
                                             self.dof_vel * self.obs_scales.dof_vel,
                                             self.actions
                                             ),dim=-1)
-                
-        # add noise if needed
-        if self.add_noise:
-            current_observation += (2 * torch.rand_like(current_observation) - 1) * self.noise_scale_vec
-
+        
         self.obs_buf = current_observation
-
-        # store history observations
-        self.history_obs_buf = torch.roll(self.history_obs_buf, shifts=1, dims=1)
-        self.history_obs_buf[:, 0, :] = self.obs_buf
 
         # Privileged observations
         # add privileged body velocities
-        current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
+        # current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
 
         disturbance_force = self.root_states[:, 7:10] * self.obs_scales.lin_vel
         current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
@@ -181,7 +175,17 @@ class A1DreamWaQ(LeggedRobot):
             current_observation = torch.cat((current_observation, heights), dim=-1)
 
         self.privileged_obs_buf = current_observation
-    
+                
+        # add noise if needed
+        if self.add_noise:
+            self.obs_buf += (2 * torch.rand_like(self.obs_buf) - 1) * self.noise_scale_vec
+
+        # store history observations
+        self.history_obs_buf = torch.roll(self.history_obs_buf, shifts=1, dims=1)
+        # print(self.obs_buf[:, 3:].shape)
+        # print(self.history_obs_buf.shape)
+        self.history_obs_buf[:, 0, :] = self.obs_buf[:, 3:]
+
     def get_history_observations(self):
         return self.history_obs_buf
     
