@@ -45,7 +45,7 @@ class A1DreamWaQ(LeggedRobot):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
         
         self.history_len = cfg.env.history_len
-        self.history_obs_buf = torch.zeros(self.num_envs, self.history_len + 1, self.num_obs, device=self.device, dtype=torch.float)
+        self.history_obs_buf = torch.zeros(self.num_envs, self.history_len + 1, self.num_obs - 3, device=self.device, dtype=torch.float)
         
     def _init_buffers(self):
         super()._init_buffers()

@@ -149,7 +149,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
         base_height_target = 0.4 # 0.25 -> 0.4
-        foot_height_target = 0.18 # 0.07 -> 0.1 -> 0.15 -> 0.18
+        foot_height_target = 0.15 # 0.07 -> 0.1 -> 0.15
         soft_dof_vel_limit = 0.65 # 1. -> 0.65
         soft_dof_pos_limit = 0.90 # 1. -> 0.90
         max_contact_force = 200. # 100. -> 200.
