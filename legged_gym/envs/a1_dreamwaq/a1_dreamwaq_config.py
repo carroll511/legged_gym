@@ -55,7 +55,6 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     #         ang_vel_yaw = [-1, 1]
 
     class commands:
-        curriculum_adaptive = "grid"  # box or grid
         curriculum_x = True
         curriculum_yaw = True
         max_curriculum_x = 1.0
@@ -194,7 +193,7 @@ class A1DreamWaQCfgPPO( LeggedRobotCfgPPO ):
         policy_class_name = 'ActorCriticDreamWaQ'
         algorithm_class_name = 'PPODreamWaQ'
 
-        max_iterations = 1000
+        max_iterations = 2000
         run_name = ''
         experiment_name = 'a1_dreamwaq'
 
