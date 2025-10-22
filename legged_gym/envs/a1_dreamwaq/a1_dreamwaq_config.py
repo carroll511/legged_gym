@@ -33,7 +33,7 @@ from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobot
 class A1DreamWaQCfg( LeggedRobotCfg ):
     class env( LeggedRobotCfg.env ):
         num_envs = 4096
-        num_observations = 45 # ang_vel(3), gravity(3), vel_cmd(3), joint_pos(12), joint_vel(12), last_action(12)
+        num_observations = 48 # body_vel(3), ang_vel(3), gravity(3), vel_cmd(3), joint_pos(12), joint_vel(12), last_action(12)
         num_privileged_obs = 238 # observations(45), height_map(187), disturbance(3) body_vel(3)
         num_actions = 12
         history_len = 5
@@ -145,17 +145,6 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         push_interval_s = 15
         max_push_vel_xy = 1.
         max_push_vel_z = 1.0
-
-
-    class domain_rand:
-        randomize_friction = True
-        friction_range = [0.5, 1.25]
-        randomize_base_mass = False
-        added_mass_range = [-1., 1.]
-        push_robots = True
-        push_interval_s = 15
-        max_push_vel_xy = 1.
-
 
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9

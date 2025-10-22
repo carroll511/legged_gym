@@ -144,6 +144,7 @@ class A1DreamWaQ(LeggedRobot):
         noise_vec[9:21] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
         noise_vec[21:33] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
         noise_vec[33:45] = 0. # previous actions
+        noise_vec[45:48] = noise_scales.lin_vel * noise_level * self.obs_scales.lin_vel
         # if self.cfg.terrain.measure_heights:
         #     noise_vec[45:232] = noise_scales.height_measurements* noise_level * self.obs_scales.height_measurements
         return noise_vec
@@ -154,22 +155,21 @@ class A1DreamWaQ(LeggedRobot):
                                             self.commands[:, :3] * self.commands_scale,
                                             (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
                                             self.dof_vel * self.obs_scales.dof_vel,
-                                            self.actions
+                                            self.actions,
+                                            self.base_lin_vel * self.obs_scales.lin_vel
                                             ),dim=-1)
+        
+        self.obs_buf = current_observation
                 
         # add noise if needed
         if self.add_noise:
-            current_observation += (2 * torch.rand_like(current_observation) - 1) * self.noise_scale_vec
-
-        self.obs_buf = current_observation
+            self.obs_buf += (2 * torch.rand_like(self.obs_buf) - 1) * self.noise_scale_vec
 
         # store history observations
         self.history_obs_buf = torch.roll(self.history_obs_buf, shifts=1, dims=1)
-        self.history_obs_buf[:, 0, :] = self.obs_buf
+        self.history_obs_buf[:, 0, :] = self.obs_buf[:, :45]
 
         # Privileged observations
-        # add privileged body velocities
-        current_observation = torch.cat((current_observation, self.base_lin_vel * self.obs_scales.lin_vel), dim=-1)
 
         disturbance_force = self.root_states[:, 7:10] * self.obs_scales.lin_vel
         current_observation = torch.cat((current_observation, disturbance_force), dim=-1)
