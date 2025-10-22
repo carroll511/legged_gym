@@ -54,6 +54,8 @@ class A1DreamWaQ(LeggedRobot):
         self.foot_pos = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 0:3]
         self.foot_vel = self.rigid_body_state.view(self.num_envs, self.num_bodies, 13)[:, self.feet_indices, 7:10]
 
+        self.last_contacts = torch.zeros(self.num_envs, len(self.feet_indices), dtype=torch.bool, device=self.device, requires_grad=False)
+
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step()
 
@@ -80,31 +82,7 @@ class A1DreamWaQ(LeggedRobot):
         if self.privileged_obs_buf is not None:
             self.privileged_obs_buf = torch.clip(self.privileged_obs_buf, -clip_obs, clip_obs)
 
-        return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.velocity_targets_buf, self.rew_buf, self.reset_buf, self.extras
-    
-    def _get_noise_scale_vec(self, cfg):
-        """ Sets a vector used to scale the noise added to the observations.
-            [NOTE]: Must be adapted when changing the observations structure
-
-        Args:
-            cfg (Dict): Environment config file
-
-        Returns:
-            [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
-        """
-        noise_vec = torch.zeros_like(self.obs_buf[0])
-        self.add_noise = self.cfg.noise.add_noise
-        noise_scales = self.cfg.noise.noise_scales
-        noise_level = self.cfg.noise.noise_level
-        noise_vec[0:3] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
-        noise_vec[3:6] = noise_scales.gravity * noise_level
-        noise_vec[6:9] = 0. # commands
-        noise_vec[9:21] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
-        noise_vec[21:33] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
-        noise_vec[33:45] = 0. # previous actions
-        # if self.cfg.terrain.measure_heights:
-        #     noise_vec[45:232] = noise_scales.height_measurements* noise_level * self.obs_scales.height_measurements
-        return noise_vec
+        return self.obs_buf, self.privileged_obs_buf, self.history_obs_buf, self.rew_buf, self.reset_buf, self.extras
 
     def post_physics_step(self):
         """ check terminations, compute observations and rewards
@@ -143,10 +121,32 @@ class A1DreamWaQ(LeggedRobot):
         self.last_dof_vel[:] = self.dof_vel[:]
         self.last_root_vel[:] = self.root_states[:, 7:13]
 
-        self.velocity_targets_buf = self.base_lin_vel * self.obs_scales.lin_vel
-
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
+
+    def _get_noise_scale_vec(self, cfg):
+        """ Sets a vector used to scale the noise added to the observations.
+            [NOTE]: Must be adapted when changing the observations structure
+
+        Args:
+            cfg (Dict): Environment config file
+
+        Returns:
+            [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
+        """
+        noise_vec = torch.zeros_like(self.obs_buf[0])
+        self.add_noise = self.cfg.noise.add_noise
+        noise_scales = self.cfg.noise.noise_scales
+        noise_level = self.cfg.noise.noise_level
+        noise_vec[:3] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
+        noise_vec[3:6] = noise_scales.gravity * noise_level
+        noise_vec[6:9] = 0. # commands
+        noise_vec[9:21] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
+        noise_vec[21:33] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
+        noise_vec[33:45] = 0. # previous actions
+        # if self.cfg.terrain.measure_heights:
+        #     noise_vec[45:232] = noise_scales.height_measurements* noise_level * self.obs_scales.height_measurements
+        return noise_vec
 
     def compute_observations(self):
         current_observation = torch.cat((   self.base_ang_vel  * self.obs_scales.ang_vel,
@@ -156,8 +156,16 @@ class A1DreamWaQ(LeggedRobot):
                                             self.dof_vel * self.obs_scales.dof_vel,
                                             self.actions
                                             ),dim=-1)
-        
+                
+        # add noise if needed
+        if self.add_noise:
+            current_observation += (2 * torch.rand_like(current_observation) - 1) * self.noise_scale_vec
+
         self.obs_buf = current_observation
+
+        # store history observations
+        self.history_obs_buf = torch.roll(self.history_obs_buf, shifts=1, dims=1)
+        self.history_obs_buf[:, 0, :] = self.obs_buf
 
         # Privileged observations
         # add privileged body velocities
@@ -173,14 +181,6 @@ class A1DreamWaQ(LeggedRobot):
             current_observation = torch.cat((current_observation, heights), dim=-1)
 
         self.privileged_obs_buf = current_observation
-                
-        # add noise if needed
-        if self.add_noise:
-            self.obs_buf += (2 * torch.rand_like(self.obs_buf) - 1) * self.noise_scale_vec
-
-        # store history observations
-        self.history_obs_buf = torch.roll(self.history_obs_buf, shifts=1, dims=1)
-        self.history_obs_buf[:, 0, :] = self.obs_buf
 
     def compute_reward(self):
         """ Compute rewards
@@ -211,15 +211,12 @@ class A1DreamWaQ(LeggedRobot):
 
     def get_history_observations(self):
         return self.history_obs_buf
-    
-    def get_velocity_targets(self):
-        return self.velocity_targets_buf
 
     def reset(self):
         """ Reset all robots"""
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
-        obs, privileged_obs, history_obs, velocity_targets, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
-        return obs, privileged_obs, history_obs, velocity_targets
+        obs, privileged_obs, history_obs, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+        return obs, privileged_obs, history_obs
 
     def reset_idx(self, env_ids):
         """ Reset some environments.
@@ -277,8 +274,12 @@ class A1DreamWaQ(LeggedRobot):
         return torch.std(torch.abs(self.torques) * torch.abs(self.dof_vel), dim=-1)
     
     def _reward_foot_clearance(self):
+        contact = self.contact_forces[:, self.feet_indices, 2] > 1.
+        contact_filt = torch.logical_or(contact, self.last_contacts)
+        self.last_contacts = contact
+
         foot_heights = (self.foot_pos[:, :, 2]).view(self.num_envs, -1)
         foot_vel_x = (self.foot_vel[:, :, 0]).view(self.num_envs, -1)
         foot_vel_y = (self.foot_vel[:, :, 1]).view(self.num_envs, -1)
         foot_vel = torch.sqrt(torch.square(foot_vel_x) + torch.square(foot_vel_y))
-        return torch.sum(torch.square(self.cfg.rewards.foot_height_target - foot_heights) * foot_vel, dim=-1)
+        return torch.sum((torch.square(self.cfg.rewards.foot_height_target - foot_heights) * foot_vel) * ~contact_filt, dim=-1)

@@ -32,7 +32,7 @@ from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobot
 
 class A1DreamWaQCfg( LeggedRobotCfg ):
     class env( LeggedRobotCfg.env ):
-        num_envs = 2048
+        num_envs = 4096
         num_observations = 45 # ang_vel(3), gravity(3), vel_cmd(3), joint_pos(12), joint_vel(12), last_action(12)
         num_privileged_obs = 238 # observations(45), height_map(187), disturbance(3) body_vel(3)
         num_actions = 12
@@ -42,16 +42,43 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         # mesh_type = 'plane'
         measure_heights = True
         slope_threshold = 0.38
+
+    # class commands:
+    #     curriculum = False
+    #     max_curriculum = 1.
+    #     num_commands = 3 # lin_vel_x, lin_vel_y, ang_vel_yaw
+    #     resampling_time = 10.
+    #     heading_command = False # ang_vel_yaw command
+    #     class ranges:
+    #         lin_vel_x = [-1.0, 1.0]
+    #         lin_vel_y = [-1.0, 1.0]
+    #         ang_vel_yaw = [-1, 1]
+
     class commands:
-        curriculum = False
-        max_curriculum = 1.
-        num_commands = 3 # lin_vel_x, lin_vel_y, ang_vel_yaw
-        resampling_time = 10.
-        heading_command = False # ang_vel_yaw command
+        curriculum_adaptive = "grid"  # box or grid
+        curriculum_x = True
+        curriculum_yaw = True
+        max_curriculum_x = 1.0
+        max_curriculum_y = 0.4
+        max_curriculum_yaw = 0.6
+
+        # Passing grade should be in [0,1]
+        passing_grade_x = 0.9
+        passing_grade_yaw = 0.4
+        inc_curriculum = 0.05
+
+        num_commands = 3  # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
+        resampling_time = 10.0  # time before command are changed[s]
+        heading_command = False  # if true: compute ang vel command from heading error
+
         class ranges:
-            lin_vel_x = [-1.0, 1.0]
-            lin_vel_y = [-1.0, 1.0]
-            ang_vel_yaw = [-1, 1]
+            lin_vel_x = [-0.0, 0.0]
+            lin_vel_y = [-0.4, 0.4]
+            ang_vel_yaw = [-0.0, 0.0]
+
+        use_zero_command = False
+        if use_zero_command:
+            zero_command_prob = 0.1
 
     class init_state( LeggedRobotCfg.init_state ):
         pos = [0.0, 0.0, 0.42] # x,y,z [m]
@@ -91,6 +118,9 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
 
     class domain_rand:
+        init_body_lin_vels = [-1.0, 1.0]
+        init_body_ang_vels = [-1.5, 1.5]
+
         randomize_base_mass = False
         added_mass_range = [-1.0, 2.0]
 
@@ -115,12 +145,27 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         push_robots = True
         push_interval_s = 15
         max_push_vel_xy = 1.
+        max_push_vel_z = 1.0
+
+
+    class domain_rand:
+        randomize_friction = True
+        friction_range = [0.5, 1.25]
+        randomize_base_mass = False
+        added_mass_range = [-1., 1.]
+        push_robots = True
+        push_interval_s = 15
+        max_push_vel_xy = 1.
 
 
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
-        base_height_target = 0.25
-        foot_height_target = 0.07
+        base_height_target = 0.4 # 0.25 -> 0.4
+        foot_height_target = 0.1 # 0.07 -> 0.1
+        soft_dof_vel_limit = 0.65 # 1. -> 0.65
+        soft_dof_pos_limit = 0.90 # 1. -> 0.90
+        max_contact_force = 200. # 100. -> 200.
+
         class scales( LeggedRobotCfg.rewards.scales ):
             torques = -0.0002
             dof_pos_limits = -10.0
@@ -149,7 +194,7 @@ class A1DreamWaQCfgPPO( LeggedRobotCfgPPO ):
         policy_class_name = 'ActorCriticDreamWaQ'
         algorithm_class_name = 'PPODreamWaQ'
 
-        max_iterations = 3000
+        max_iterations = 1000
         run_name = ''
         experiment_name = 'a1_dreamwaq'
 
