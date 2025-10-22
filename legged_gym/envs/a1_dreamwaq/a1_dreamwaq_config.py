@@ -43,41 +43,41 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
         measure_heights = True
         slope_threshold = 0.38
 
-    # class commands:
-    #     curriculum = False
-    #     max_curriculum = 1.
-    #     num_commands = 3 # lin_vel_x, lin_vel_y, ang_vel_yaw
-    #     resampling_time = 10.
-    #     heading_command = False # ang_vel_yaw command
-    #     class ranges:
-    #         lin_vel_x = [-1.0, 1.0]
-    #         lin_vel_y = [-1.0, 1.0]
-    #         ang_vel_yaw = [-1, 1]
-
     class commands:
-        curriculum_x = True
-        curriculum_yaw = True
-        max_curriculum_x = 1.0
-        max_curriculum_y = 0.4
-        max_curriculum_yaw = 0.6
-
-        # Passing grade should be in [0,1]
-        passing_grade_x = 0.9
-        passing_grade_yaw = 0.4
-        inc_curriculum = 0.05
-
-        num_commands = 3  # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
-        resampling_time = 10.0  # time before command are changed[s]
-        heading_command = False  # if true: compute ang vel command from heading error
-
+        curriculum = False
+        max_curriculum = 1.
+        num_commands = 3 # lin_vel_x, lin_vel_y, ang_vel_yaw
+        resampling_time = 10.
+        heading_command = False # ang_vel_yaw command
         class ranges:
-            lin_vel_x = [-0.0, 0.0]
-            lin_vel_y = [-0.4, 0.4]
-            ang_vel_yaw = [-0.0, 0.0]
+            lin_vel_x = [-1.0, 1.0]
+            lin_vel_y = [-1.0, 1.0]
+            ang_vel_yaw = [-1, 1]
 
-        use_zero_command = False
-        if use_zero_command:
-            zero_command_prob = 0.1
+    # class commands:
+    #     curriculum_x = True
+    #     curriculum_yaw = True
+    #     max_curriculum_x = 1.0
+    #     max_curriculum_y = 0.4
+    #     max_curriculum_yaw = 0.6
+
+    #     # Passing grade should be in [0,1]
+    #     passing_grade_x = 0.9
+    #     passing_grade_yaw = 0.4
+    #     inc_curriculum = 0.05
+
+    #     num_commands = 3  # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
+    #     resampling_time = 10.0  # time before command are changed[s]
+    #     heading_command = False  # if true: compute ang vel command from heading error
+
+    #     class ranges:
+    #         lin_vel_x = [-0.0, 0.0]
+    #         lin_vel_y = [-0.4, 0.4]
+    #         ang_vel_yaw = [-0.0, 0.0]
+
+    #     use_zero_command = False
+    #     if use_zero_command:
+    #         zero_command_prob = 0.1
 
     class init_state( LeggedRobotCfg.init_state ):
         pos = [0.0, 0.0, 0.42] # x,y,z [m]
@@ -160,7 +160,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9
         base_height_target = 0.4 # 0.25 -> 0.4
-        foot_height_target = 0.1 # 0.07 -> 0.1
+        foot_height_target = 0.15 # 0.07 -> 0.1 -> 0.15
         soft_dof_vel_limit = 0.65 # 1. -> 0.65
         soft_dof_pos_limit = 0.90 # 1. -> 0.90
         max_contact_force = 200. # 100. -> 200.
@@ -174,6 +174,7 @@ class A1DreamWaQCfg( LeggedRobotCfg ):
             foot_clearance = -0.01
             smoothness = -0.01
             power_distribution = -1e-5
+            stumble = -0.2
 
     class normalization:
         class obs_scales:
