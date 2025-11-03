@@ -194,7 +194,7 @@ class A1DreamWaQCfgPPO( LeggedRobotCfgPPO ):
         policy_class_name = 'ActorCriticDreamWaQ'
         algorithm_class_name = 'PPODreamWaQ'
 
-        max_iterations = 20
+        max_iterations = 2000
         run_name = ''
         experiment_name = 'a1_dreamwaq'
 
