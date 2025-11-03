@@ -124,6 +124,22 @@ class A1DreamWaQ(LeggedRobot):
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
 
+    def update_command_curriculum(self, env_ids):
+        """ Implements a curriculum of increasing commands
+
+        Args:
+            env_ids (List[int]): ids of environments being reset
+        """
+        # If the tracking reward is above 80% of the maximum, increase the range of commands
+        if (torch.mean(self.episode_sums["tracking_lin_vel"][env_ids]) / self.max_episode_length > self.cfg.commands.passing_grade_x * self.reward_scales["tracking_lin_vel"]) or (torch.mean(self.episode_sums["tracking_ang_vel"][env_ids]) / self.max_episode_length > self.cfg.commands.passing_grade_yaw * self.reward_scales["tracking_ang_vel"]):
+            self.command_ranges["lin_vel_x"][0] = np.clip(self.command_ranges["lin_vel_x"][0] - self.cfg.commands.inc_curriculum, -self.cfg.commands.max_curriculum_x, 0.)
+            self.command_ranges["lin_vel_x"][1] = np.clip(self.command_ranges["lin_vel_x"][1] + self.cfg.commands.inc_curriculum, 0., self.cfg.commands.max_curriculum_x)
+
+            self.command_ranges["ang_vel_yaw"][0] = np.clip(self.command_ranges["ang_vel_yaw"][0] - self.cfg.commands.inc_curriculum, -self.cfg.commands.max_curriculum_yaw, 0.)
+            self.command_ranges["ang_vel_yaw"][1] = np.clip(self.command_ranges["ang_vel_yaw"][1] + self.cfg.commands.inc_curriculum, 0., self.cfg.commands.max_curriculum_yaw)
+
+
+
     def _get_noise_scale_vec(self, cfg):
         """ Sets a vector used to scale the noise added to the observations.
             [NOTE]: Must be adapted when changing the observations structure
@@ -234,7 +250,7 @@ class A1DreamWaQ(LeggedRobot):
         if self.cfg.terrain.curriculum:
             self._update_terrain_curriculum(env_ids)
         # avoid updating command curriculum at each step since the maximum command is common to all envs
-        if self.cfg.commands.curriculum and (self.common_step_counter % self.max_episode_length==0):
+        if (self.cfg.commands.curriculum_x or self.cfg.commands.curriculum_yaw) and (self.common_step_counter % self.max_episode_length==0):
             self.update_command_curriculum(env_ids)
         
         # reset robot states
@@ -258,8 +274,10 @@ class A1DreamWaQ(LeggedRobot):
         # log additional curriculum info
         if self.cfg.terrain.curriculum:
             self.extras["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
-        if self.cfg.commands.curriculum:
+        if self.cfg.commands.curriculum_x:
             self.extras["episode"]["max_command_x"] = self.command_ranges["lin_vel_x"][1]
+        if self.cfg.commands.curriculum_yaw:
+            self.extras["episode"]["max_command_yaw"] = self.command_ranges["ang_vel_yaw"][1]
         # send timeout info to the algorithm
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
